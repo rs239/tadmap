@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 
-PROJ_DIR="/afs/csail.mit.edu/u/r/rsingh/work/vartad" #"../.."
+import pathlib
 
-DEBUG_MODE=True #False
+PROJ_DIR=str(pathlib.Path.home())  #"../.."
+
+DEBUG_MODE=False #True
 
 def dbg_print(s, *args, **kwargs):
+    global DEBUG_MODE
     if DEBUG_MODE or s[:5] != "Flag ":
         print(s, *args, **kwargs)
 
@@ -12,6 +15,11 @@ def dbg_print(s, *args, **kwargs):
 import logging
 
 tadmap_loglevel = logging.WARNING #WARNING
+
+def set_loglevel(l):
+    global tadmap_loglevel
+    print("Changing loglevel from %s to %s" % (tadmap_loglevel, l))
+    tadmap_loglevel = l
 
 
 def tadmap_debug(*args, **kwargs):

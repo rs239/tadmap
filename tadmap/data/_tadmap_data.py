@@ -3,9 +3,8 @@
 
 ###################################################################
 ## Primary Author:  Rohit Singh rsingh@alum.mit.edu
-## Co-Authors: Ashwin Narayan, Brian Hie {ashwinn,brianhie}@mit.edu
 ## License: MIT
-## Repository:  http://github.io/rs239/schema
+## Repository:  http://github.io/rs239/tadmap
 ###################################################################
 
 import sys, copy, os, warnings
@@ -27,18 +26,20 @@ with warnings.catch_warnings():
 
 
 
-def fly_brain():
-    """ Anndata object containing scRNA-seq data of the ageing Drosophila brain (GSE107451, Davie et al., Cell 2018)
+def dummy():
+    """ Dummy
 """
     
-    adata = scanpy.read("datasets/Davie_fly_brain.h5", backup_url="http://schema.csail.mit.edu/datasets/Davie_fly_brain.h5")
-    return adata
+    return None
 
 
-def scicar_mouse_kidney():
-    """ Anndata object containing scRNA-seq+ATAC-seq data of mouse kidney cells from the Sci-CAR study (GSE117089, Cao et al., Science 2018)
+def tad_to_geneset_dict():
+    """ Dummy
 """
-    
-    adata = scanpy.read("datasets/Cao_mouse_kidney.h5", backup_url="http://schema.csail.mit.edu/datasets/Cao_mouse_kidney.h5")
-    return adata
+    return None
 
+
+def tadlist_bed_format():
+    """ Dummy
+"""
+    return None

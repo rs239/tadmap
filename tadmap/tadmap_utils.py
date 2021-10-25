@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+###################################################################
+## Primary Author:  Rohit Singh rsingh@alum.mit.edu
+## License: MIT
+## Repository:  http://github.io/rs239/tadmap
+###################################################################
+
 import pandas as pd
 import numpy as np
 import scipy, sklearn, os, sys, string, fileinput, glob, re, math, itertools, functools, copy, multiprocessing, traceback, tarfile, gzip, csv
@@ -14,15 +20,16 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from base_config import *
+from . import  tadmap_base_config
+dbg_print = tadmap_base_config.dbg_print
 
 
-def read_Ensembl_v102_refdata(sp, do_prot_coding):
+def read_Ensembl_v102_refdata(sp, do_prot_coding=True):
     assert sp in ['hs','mm']
-    assert do_prot_coding #only implemented for protein_coding genes. non-PC genes was deprecated early on
+    assert do_prot_coding #only implemented for protein_coding genes
 
     if sp=='mm':
-        df = pd.read_csv("~/work/vartad/data/raw2/genes/mm10_ens102_refdata.tsv", delimiter='\t')
+        df = pd.read_csv("http://cb.csail.mit.edu/cb/tadmap/TADMap_mm10_ens102_refdata.tsv", delimiter='\t')
         df = df[~df['MGI symbol'].isnull()].reset_index(drop=True)
         df = df[df['Chromosome/scaffold name'].apply(lambda s: len(s)<=2 and s!="MT")].reset_index(drop=True)
         df["gene1"] = np.where(~df["Gene name"].isnull(), df["Gene name"], df["Gene stable ID"])
@@ -33,7 +40,7 @@ def read_Ensembl_v102_refdata(sp, do_prot_coding):
         return df1
 
     if sp=='hs':
-        df = pd.read_csv("~/work/vartad/data/raw2/genes/hg38_ens102_refdata.tsv", delimiter='\t')
+        df = pd.read_csv("http://cb.csail.mit.edu/cb/tadmap/TADMap_mm10_ens102_refdata.tsv", delimiter='\t')
         df = df[~df['HGNC symbol'].isnull()].reset_index(drop=True)
         df = df[df['Chromosome/scaffold name'].apply(lambda s: len(s)<=2 and s!="MT")].reset_index(drop=True)
         df["gene1"] = np.where(~df["Gene name"].isnull(), df["Gene name"], df["Gene stable ID"])
@@ -46,7 +53,7 @@ def read_Ensembl_v102_refdata(sp, do_prot_coding):
         
 
 
-def do_scanpy_processing_and_filtering(adata, sample_frac=1.0, do_log1p=True):
+def _do_scanpy_processing_and_filtering(adata, sample_frac=1.0, do_log1p=True):
     import scanpy as sc
 
     if sample_frac > 0.999:
@@ -71,7 +78,7 @@ def do_scanpy_processing_and_filtering(adata, sample_frac=1.0, do_log1p=True):
     return adata2
 
 
-def convert_to_counts(adata):
+def convert_adata_to_counts(adata):
     import scanpy as sc
     max1 = np.max(np.max(adata.X))
     if max1 < 15: # likely log values
@@ -83,22 +90,33 @@ def convert_to_counts(adata):
 
 
         
-def parse_geneids(s):
+def _parse_geneids(s):
     l = s.split("|")
     sym = l[0]
-    try:
-        hgncid = [a.split(':')[2] for a in l if a.startswith("HGNC:")][0]
-    except:
-        hgncid = sym
+
+    otherid=sym
+    if 'HGNC:' in s:
+        try:
+            otherid = [a.split(':')[2] for a in l if a.startswith("HGNC:")][0]
+        except:
+            otherid = sym
+    if 'MGI:' in s:
+        try:
+            otherid = [a.split(':')[2] for a in l if a.startswith("MGI:")][0]
+        except:
+            otherid = sym
     try:
         ensemblid = [a.split(':')[1] for a in l if a.startswith("Ensembl:")][0]
     except:
         ensemblid = sym
-    return (sym, ensemblid, hgncid)
+        
+    return (sym, ensemblid, otherid)
 
 
-def readTADs(tad_file):
-    df = pd.read_csv(tad_file)
+
+
+def read_TADMap_from_file_or_url(tad_file_or_url):
+    df = pd.read_csv(tad_file_or_url)
     dbg_print("Flag 652.01 ", df.shape)
     df = df[~df["genelist"].isnull()]
     
@@ -110,7 +128,7 @@ def readTADs(tad_file):
     tad2genelist = {}
     for i in range(df.shape[0]):
         tad = df["tad"].iat[i]
-        genelist = [parse_geneids(s) for s in df['genelist'].iat[i].split(';')]
+        genelist = [_parse_geneids(s) for s in df['genelist'].iat[i].split(';')]
         
         #dbg_print("Flag 652.10 ", tad, len(genelist), genelist[0])        
         tad2genelist[tad] = [a[0] for a in genelist]
@@ -120,78 +138,71 @@ def readTADs(tad_file):
 
 
 
-def match_adata_to_geneset(adata, geneset, adata_genes=None):
-    if adata_genes is not None:
-        genes = adata_genes
-    else:
-        genes = list(adata.var_names)
-        
+def retrieve_TADMap_by_species(sp_2_letter):
+    assert sp_2_letter in ["hs","mm"]
+    server_location = {"hs": "http://cb.csail.mit.edu/cb/tadmap/TADMap_geneset_hs.csv",
+                       "mm": "http://cb.csail.mit.edu/cb/tadmap/TADMap_geneset_mm.csv",}
+    
+    return read_TADMap_from_file_or_url(server_location[sp_2_letter])
+
+
+
+def standardize_adata_gene_names(adata_in, sp_2_letter):
+    assert sp_2_letter in ["hs","mm"]
+    geneset, _ = retrieve_TADMap_by_species(sp_2_letter)
+    return _match_adata_to_geneset(adata_in, geneset)
+
+
+
+def _match_adata_to_geneset(adata_in, geneset):
+    adata = adata_in.copy()
+
+    f_remove_ens_version = lambda s: s.split('.')[0] if s[:3]=="ENS" else s
+    
+    D_upper_to_standard  = {}
+    for g0, g1, g2 in geneset:
+        D_upper_to_standard[g0.upper()] = g0
+        D_upper_to_standard[g1.upper()] = g1
+        D_upper_to_standard[g2.upper()] = g2
+
+    # remove versions and fix case to match geneset
+    genes = list(adata.var_names)
+    genes1 = [f_remove_ens_version(g) for g in genes]
+    genes2 = [D_upper_to_standard.get(g.upper(),g) for g in genes1]
+    adata.var_names = genes2
+    genes = list(adata.var_names)
+    
     symbol_matchcnt = len( set(genes) & set(a[0] for a in geneset))
     ensembl_matchcnt = len( set(genes) & set(a[1] for a in geneset))
-    print ("Flag 342.24 ", symbol_matchcnt, ensembl_matchcnt, len(geneset), len(genes))
+    dbg_print ("Flag 342.24 ", symbol_matchcnt, ensembl_matchcnt, len(geneset), len(genes))
     
     if ensembl_matchcnt > symbol_matchcnt:
         ensembl2gene = {a[1]:a[0] for a in geneset}
         genes1 = copy.deepcopy(genes)
         genes = [ensembl2gene.get(g,g) for g in genes1]
-
+        adata.var_names = genes
+        
     geneset_symbols = set(a[0] for a in geneset)
+    adata.var_names_make_unique() # because of the matching code below, all but one of the dupes will be dropped
     valid_genes = np.array([(g in geneset_symbols) for g in adata.var_names])
 
-    print ("Flag 342.29 ", adata.shape)
+    dbg_print ("Flag 342.29 ", adata.shape)
     return adata[:, valid_genes].copy()
 
 
 
-def read_trajectorama_data(rnaseq_data_path, geneset):
-    for pat in ["/*tab.npz", "*tab.npz", "*.npz"]:
-        l = glob.glob('{0}{1}'.format(rnaseq_data_path, pat))
-        print ("Flag 342.10 ", l)
-        if l:
-            npz_file = l[0]
-            break
-    else:
-        raise "Could not find tab file in "+rnaseq_data_path
-
-    
-    for pat in ["/*genes.txt", "*genes.txt"]:
-        l = glob.glob('{0}{1}'.format(rnaseq_data_path, pat))
-        print ("Flag 342.15 ", l)
-        if l:
-            genes_file = l[0]
-            break
-    else:
-        raise "Could not find genes.txt file in "+rnaseq_data_path
-    
-
-        
-    X = scipy.sparse.load_npz(npz_file)
-    genes = np.array(open(genes_file,'r').read().rstrip().split('\n'))
-
-    from anndata import AnnData
-    adata = AnnData(X)
-    print ("Flag 342.20 ", adata.shape, len(genes))
-    adata.var_names = genes
-    adata.var_names_make_unique() # because of the matching code below, all but one of the dupes will be dropped
-
-    adata = match_adata_to_geneset(adata, geneset, genes)
-    print ("Flag 342.30 ", adata.shape)
-        
-    return adata
-
-
-def read_scvelo_data(rnaseq_data_path, geneset):
+def _read_scvelo_data(rnaseq_data_path, geneset):
     from anndata import AnnData
     import scanpy as sc
     
     adata = sc.read(rnaseq_data_path)
-    print ("Flag 342.20 ", adata.shape, len(geneset))
+    dbg_print ("Flag 342.20 ", adata.shape, len(geneset))
     adata.var_names = [c.upper() for c in adata.var_names]
     adata.var_names_make_unique() # because of the matching code below, all but one of the dupes will be dropped
 
-    adata = match_adata_to_geneset(adata, geneset)
+    adata = _match_adata_to_geneset(adata, geneset)
     
-    print ("Flag 342.30 ", adata.shape)
+    dbg_print ("Flag 342.30 ", adata.shape)
     if 'cluster' not in adata.obs.columns:
         if 'clusters_coarse' in adata.obs.columns:
             adata.obs['cluster'] = adata.obs['clusters_coarse']

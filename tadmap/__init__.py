@@ -1,8 +1,19 @@
+#!/usr/bin/env python
 
-from .compute_tad_representation import compute_TAD_signature, to_log_odds
-from .tadmap_base_config import tadmap_loglevel
+from .tad_signature import compute_tad_signature, to_log_odds
 
-__all__ = ['compute_TAD_signature', 'to_log_odds', 'tadmap_loglevel']
+from .tadmap_utils import read_Ensembl_v102_refdata, convert_adata_to_counts, read_TADMap_from_file_or_url, retrieve_TADMap_by_species, standardize_adata_gene_names
+
+from .tadmap_base_config import set_loglevel
+
+__all__ = ['compute_tad_signature',
+           'to_log_odds',
+           'read_Ensembl_v102_refdata',
+           'convert_adata_to_counts',
+           'read_TADMap_from_file_or_url',
+           'retrieve_TADMap_by_species',
+           'standardize_adata_gene_names',
+           'set_loglevel']
 
 
 import pkgutil, pathlib, importlib
