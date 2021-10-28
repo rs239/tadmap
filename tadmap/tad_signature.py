@@ -165,6 +165,8 @@ def _compute_tad_occupancy_by_EM_poisson( adata, tad2genelist, extra_args):
         
         #did the log transform to limit the variability of the data
         adata.X = np.round_(np.log1p(adata.X)).astype(int).astype(float)
+    else:
+        adata.X = np.round_(adata.X).astype(int).astype(float)
 
         
     dbg_print("Flag 935.20 ", adata.X.shape, adata.X[:7,:7].todense())
@@ -243,7 +245,8 @@ def compute_tad_signature(adata, sp_2_letter):
     assert sp_2_letter in ["hs","mm"]
     
     extra_args = {}
-    return _compute_tad_signature(adata, sp_2_letter, extra_args)
+    adata2 = adata.copy()
+    return _compute_tad_signature(adata2, sp_2_letter, extra_args)
 
 
 
@@ -291,17 +294,17 @@ def _compute_tad_signature(adata, sp, extra_args):
 
 
 def to_log_odds(tad_occupancy_df):
-    """ Convert probability scores `p` to log-odds, `log(p/1-p)`
+    """ Convert probability scores `p` to log-odds, `log(p/(1-p))`
 
     This is a useful conversion to do before passing TAD signatures to a clustering or visualization 
     process. It widens the range of values and makes them more compatible with the Euclidean 
     distance metric, which underlies many clustering and visualization algorithms.
 
-    : param tad_occupancy_df:  Pandas dataframe
+    :param tad_occupancy_df:  Pandas dataframe
 
     This is the first dataframe item in the pair of dataframes returned by `compute_tad_signature`
 
-    : returns : Pandas dataframe, same dimensions as the input
+    :returns: Pandas dataframe, same dimensions as the input
 
 """
     M = np.log(np.maximum(tad_occupancy_df.values, 1e-15) / np.maximum(1-tad_occupancy_df.values, 1e-15))
