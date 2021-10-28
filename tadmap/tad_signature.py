@@ -161,7 +161,7 @@ def _compute_tad_occupancy_by_EM_poisson( adata, tad2genelist, extra_args):
     tadmap_base_config.tadmap_info("Checking adata...")
     
     if int(extra_args.get("adata_is_logcpm_normalized",0))  < 0.5:
-        U.convert_adata_to_counts(adata)
+        U._convert_adata_to_counts(adata)
         
         #did the log transform to limit the variability of the data
         adata.X = np.round_(np.log1p(adata.X)).astype(int).astype(float)
@@ -215,13 +215,29 @@ def compute_tad_signature(adata, sp_2_letter):
     :type sp_2_letter: string
 
     :returns: a pair of Pandas dataframes: the TAD signature and auxiliary information, respectively
+
         The first dataframe is of dimensionality n x T where n is the number of cells and T is the
         number of TADs. The algorithm will filter out TADs which had no active genes in the data so
-        T may vary a little across datasets. 
+        T may vary a little across datasets. The column names correspond to TAD names which are in
+        the following format: `<numeric_id>|<chromosome>|<start>|<end>` 
 
         The second dataframe contains one row per (TAD,gene) pair. Some genes may span two TADs and
         will have two rows. Each row contains the TADs score dispersion, an indication of its 
-        variability, similar to highly variable genes. 
+        variability, similar to highly variable genes. Specifically, here are the column names of 
+        this dataframe:
+
+             - `tad_name`: see above
+             - `tad_gene_count`: number of protein-coding genes partially/fully contained in the TAD
+             - `lambda_ON`: lambda for the Poisson corresponding to "ON" TADs (same for all rows)
+             - `lambda_OFF`: lambda for the Poisson corresponding to "OFF" TADs (same for all rows)
+             - `tad_activation_mean`: the average probability score of activation for this TAD 
+                 across `n` cells
+             - `tad_activation_disp`: variance/mean of probability score of activation for this 
+                 TAD across `n` cells. Use this as the measure for identifying highly variable TADs
+             - `gene`: Ensembl v102 name of a gene contained in the TAD. 
+                 There is one row for each (gene,TAD) pair
+
+
 """
 
     assert sp_2_letter in ["hs","mm"]
@@ -275,6 +291,19 @@ def _compute_tad_signature(adata, sp, extra_args):
 
 
 def to_log_odds(tad_occupancy_df):
+    """ Convert probability scores `p` to log-odds, `log(p/1-p)`
+
+    This is a useful conversion to do before passing TAD signatures to a clustering or visualization 
+    process. It widens the range of values and makes them more compatible with the Euclidean 
+    distance metric, which underlies many clustering and visualization algorithms.
+
+    : param tad_occupancy_df:  Pandas dataframe
+
+    This is the first dataframe item in the pair of dataframes returned by `compute_tad_signature`
+
+    : returns : Pandas dataframe, same dimensions as the input
+
+"""
     M = np.log(np.maximum(tad_occupancy_df.values, 1e-15) / np.maximum(1-tad_occupancy_df.values, 1e-15))
     return pd.DataFrame(M, index=tad_occupancy_df.index, columns=tad_occupancy_df.columns)
 

@@ -9,7 +9,6 @@ from .tadmap_base_config import set_loglevel
 __all__ = ['compute_tad_signature',
            'to_log_odds',
            'read_Ensembl_v102_refdata',
-           'convert_adata_to_counts',
            'read_TADMap_from_file_or_url',
            'retrieve_TADMap_by_species',
            'standardize_adata_gene_names',

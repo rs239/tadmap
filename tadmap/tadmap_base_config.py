@@ -17,6 +17,9 @@ import logging
 tadmap_loglevel = logging.WARNING #WARNING
 
 def set_loglevel(l):
+    """Set the loglevel to one of logging.{ERROR,WARNING,INFO,DEBUG}. Default = WARNING
+"""
+    
     global tadmap_loglevel
     print("Changing loglevel from %s to %s" % (tadmap_loglevel, l))
     tadmap_loglevel = l

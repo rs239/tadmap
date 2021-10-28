@@ -24,9 +24,15 @@ from . import  tadmap_base_config
 dbg_print = tadmap_base_config.dbg_print
 
 
-def read_Ensembl_v102_refdata(sp, do_prot_coding=True):
+def read_Ensembl_v102_refdata(sp):
+    """ Returns a dataframe consisting of gene symbology, location etc. for Ensembl v102
+
+    :param sp: string, one of `hs` (human) or `mm` (mouse)
+
+    :returns: A dataframe with gene name, chromosome, strad direction, TSS etc., 
+"""
+
     assert sp in ['hs','mm']
-    assert do_prot_coding #only implemented for protein_coding genes
 
     if sp=='mm':
         df = pd.read_csv("http://cb.csail.mit.edu/cb/tadmap/TADMap_mm10_ens102_refdata.tsv", delimiter='\t')
@@ -78,7 +84,7 @@ def _do_scanpy_processing_and_filtering(adata, sample_frac=1.0, do_log1p=True):
     return adata2
 
 
-def convert_adata_to_counts(adata):
+def _convert_adata_to_counts(adata):
     import scanpy as sc
     max1 = np.max(np.max(adata.X))
     if max1 < 15: # likely log values
@@ -116,6 +122,28 @@ def _parse_geneids(s):
 
 
 def read_TADMap_from_file_or_url(tad_file_or_url):
+    """ Given a file that contains the TAD Map in the default format, parse it and return the results
+
+    The file format needs to match the ones currently hosted at 
+    `https://cb.csail.mit.edu/cb/tadmap/TADMap_geneset_{hs,mm}.csv`
+
+    In particular, it is a CSV format of the form:
+
+      <tad_name>,[semi-colon separated list of genes partially/fully contained in the TAD]
+
+    Gene may be specified by multiple pipe-separated identifiers, with first one being the canonical,
+
+    :param tad_file_or_url: string specifying file location or URL
+
+    :returns: the pair (`geneset`, `tad2genelist`)
+ 
+        - geneset: the set of all genes listed in the file. Each gene is specified as a 3-tuple: 
+          (canonical_name, Ensembl_name, MGI_or_HGNC_name)
+
+        - tad2genelist: a dictionary from tad_name -> list of genes. 
+          Only the canonical_name of the gene is provided in the list
+"""
+    
     df = pd.read_csv(tad_file_or_url)
     dbg_print("Flag 652.01 ", df.shape)
     df = df[~df["genelist"].isnull()]
@@ -139,6 +167,15 @@ def read_TADMap_from_file_or_url(tad_file_or_url):
 
 
 def retrieve_TADMap_by_species(sp_2_letter):
+    """ Retrieve the pre-computed TAD MAp from the default remote location
+
+    The default location is     `https://cb.csail.mit.edu/cb/tadmap/TADMap_geneset_{hs,mm}.csv`
+
+    :param sp_2_letter: string, specifying `hs` (human) or `mm` (mouse). These are the only species 
+       supported currently.
+
+    :returns:  the same output as `read_TADMap_from_file_or_url`, which is called by this function
+""" 
     assert sp_2_letter in ["hs","mm"]
     server_location = {"hs": "http://cb.csail.mit.edu/cb/tadmap/TADMap_geneset_hs.csv",
                        "mm": "http://cb.csail.mit.edu/cb/tadmap/TADMap_geneset_mm.csv",}
@@ -148,6 +185,19 @@ def retrieve_TADMap_by_species(sp_2_letter):
 
 
 def standardize_adata_gene_names(adata_in, sp_2_letter):
+    """ Process the gene names in an AnnData object to map them to Ensembl v102 names, removing those
+    that do not match.
+
+    This is an preprocessing step to call before calling `compute_tad_signature`, 
+    since the rest of this module only works with Ensembl v102 canonical names. 
+
+    :param adata_in: the input AnnData object, with gene names in `adata_in.var_names`
+
+    :param sp_2_letter: string specifying the species: `hs` (human) or `mm` (mouse)
+
+
+    :returns: AnnData object, with var_names mapped to Ensembl v102, duplicates and non-mappable names removed. 
+"""
     assert sp_2_letter in ["hs","mm"]
     geneset, _ = retrieve_TADMap_by_species(sp_2_letter)
     return _match_adata_to_geneset(adata_in, geneset)
