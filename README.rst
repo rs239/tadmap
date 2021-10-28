@@ -10,7 +10,7 @@
 TAD Map - Consensus estimates of TAD layouts with associated tools for single-cell RNA-seq analysis
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Topologically associating domains (TADs) are contiguous segments of the genome where the genomic elements are in frequent contact with each other. Genes that cooccupy a TAD are often functionally related and more likely to be coexpressed than random gene pairs, The TAD Map (preprint to come) provides a consensus estimate, aggregated from multiple experimental datasets, of this layout in human and mouse. It also provides tools to map any single-cell RNA-seq dataset to *TAD signatures*, where gene expression is mapped to TAD activation probabilities in each cell.
+Topologically associating domains (TADs) are contiguous segments of the genome where the genomic elements are in frequent contact with each other. Genes that cooccupy a TAD are often functionally related and more likely to be coexpressed than random gene pairs, The TAD Map (preprint to come) provides a consensus estimates of this layout in human and mouse, aggregated from multiple experimental datasets. A useful interpretation of the TAD Map is as a grouping of genes along the genome that share a similar chromatin neighborhood and may be co-regulated. Accordingly, this package also provides functionality to map any single-cell RNA-seq dataset to *TAD signatures*, where gene expression is grouped by TADs, and mapped to per-TAD activation probabilities in each cell.
 
 Read the documentation_.
 We encourage you to report issues at our `Github page`_ ; you can also create pull reports there to contribute your enhancements.

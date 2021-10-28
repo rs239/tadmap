@@ -20,7 +20,10 @@ def set_loglevel(l):
     global tadmap_loglevel
     print("Changing loglevel from %s to %s" % (tadmap_loglevel, l))
     tadmap_loglevel = l
-
+    if tadmap_loglevel == logging.DEBUG:
+        global DEBUG_MODE
+        DEBUG_MODE = True
+    
 
 def tadmap_debug(*args, **kwargs):
     if tadmap_loglevel <= logging.DEBUG: print("DEBUG: ", *args, **kwargs)

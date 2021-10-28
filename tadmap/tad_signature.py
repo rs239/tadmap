@@ -193,6 +193,36 @@ def _compute_tad_occupancy_by_EM_poisson( adata, tad2genelist, extra_args):
 
 
 def compute_tad_signature(adata, sp_2_letter):
+    """Given an AnnData object and a species (`hs` or `mm`), compute a TAD activation profile for each cell
+
+    The activation profile is computed by fitting a 2-component Poisson mixture model using the
+    Expectation Maximization model. One component corresponds to TADs that are transcriptionally 
+    active (i.e., "ON"), while the other corresponds to "OFF" TADs. However, even "OFF" TADs can 
+    have genes with active expression (e.g. isolated expression of a single gene in a 
+    non-TAD-dependent fashion. For each cell, the EM algorithm computes for each TAD --- there are 
+    approx ~3000 of them in human and mouse --- the probability that the TAD is in "ON" state.
+
+
+    :param adata:
+        AnnData object (`n` cells). The gene expression matrix can be sparse or dense 
+        and contain counts or log1p-transformed data--- the method will try to adapt accordingly.
+
+    :type adata: AnnData object
+
+    :param sp_2_letter: one of 'hs' or 'mm'
+        Currently, TAD Maps are supported only for human ('hs') or mouse ('mm')
+
+    :type sp_2_letter: string
+
+    :returns: a pair of Pandas dataframes: the TAD signature and auxiliary information, respectively
+        The first dataframe is of dimensionality n x T where n is the number of cells and T is the
+        number of TADs. The algorithm will filter out TADs which had no active genes in the data so
+        T may vary a little across datasets. 
+
+        The second dataframe contains one row per (TAD,gene) pair. Some genes may span two TADs and
+        will have two rows. Each row contains the TADs score dispersion, an indication of its 
+        variability, similar to highly variable genes. 
+"""
     assert sp_2_letter in ["hs","mm"]
     
     extra_args = {}
