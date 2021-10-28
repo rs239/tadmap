@@ -196,11 +196,11 @@ def compute_tad_signature(adata, sp_2_letter):
     """Given an AnnData object and a species (`hs` or `mm`), compute a TAD activation profile for each cell
 
     The activation profile is computed by fitting a 2-component Poisson mixture model using the
-    Expectation Maximization model. One component corresponds to TADs that are transcriptionally 
+    Expectation Maximization (EM) algorithm. One component corresponds to TADs that are transcriptionally 
     active (i.e., "ON"), while the other corresponds to "OFF" TADs. However, even "OFF" TADs can 
     have genes with active expression (e.g. isolated expression of a single gene in a 
-    non-TAD-dependent fashion. For each cell, the EM algorithm computes for each TAD --- there are 
-    approx ~3000 of them in human and mouse --- the probability that the TAD is in "ON" state.
+    non-TAD-dependent fashion). For each cell, the EM algorithm computes for each TAD --- there are 
+    approx 3000 of them in human and mouse --- the probability that the TAD is in "ON" state.
 
 
     :param adata:

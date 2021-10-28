@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='tadmap',
-      version='0.1.1',
+      version='0.1.2',
       description='Consensus layout of topologically associating domains (TADs) and utilities for RNA-seq analysis',
       
       long_description='Topologically associating domains (TADs) are contiguous segments of the genome where the genomic elements are in frequent contact with each other. The TAD Map provides a consensus estimate, aggregated from multiple experimental datasets, of this layout in human and mouse. It also provides tools to map any single-cell RNA-seq dataset to TAD signatures, with gene expression mapped to TAD activation probabilities in each cell',      
