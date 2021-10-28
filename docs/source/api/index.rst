@@ -1,7 +1,7 @@
 API
 ===
 
-.. automodule:: schema
+.. automodule:: tadmap
     :members:
     :undoc-members:
     :show-inheritance:
