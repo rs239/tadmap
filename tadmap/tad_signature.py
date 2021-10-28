@@ -223,6 +223,7 @@ def compute_tad_signature(adata, sp_2_letter):
         will have two rows. Each row contains the TADs score dispersion, an indication of its 
         variability, similar to highly variable genes. 
 """
+
     assert sp_2_letter in ["hs","mm"]
     
     extra_args = {}
