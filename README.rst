@@ -17,5 +17,5 @@ We encourage you to report issues at our `Github page`_ ; you can also create pu
 If the TAD Map is useful in your research, please consider citing our preprint `bioRxiv (2021)`_.
 
 .. _documentation: https://tadmap.readthedocs.io/en/latest/overview.html
-.. _bioRxiv (2021): http://doi.org/10.1101/TBD
+.. _bioRxiv (2021): https://doi.org/10.1101/2021.10.28.466333
 .. _Github page: https://github.com/rs239/tadmap
